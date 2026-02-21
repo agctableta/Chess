@@ -1424,34 +1424,38 @@ async function procesarImagenAjedrez(file) {
 
 // 1. Evento para el botón de archivo
 // Busca esta parte al final de tu <script> y reemplázala
-document.getElementById('imgInput').addEventListener('change', function(e) {
+document.getElementById('imgInput').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const statusEl = document.querySelector('.status');
-    statusEl.innerText = "⏳ IA Analizando tablero...";
+    statusEl.innerText = "⏳ IA analizando tablero...";
 
     const formData = new FormData();
     formData.append('image', file);
 
-    fetch('https://api.chessvision.ai/v1/predict', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+        // Probamos con el endpoint de predicción directa
+        const response = await fetch('https://api.chessvision.ai/v1/predict', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
         if (data.fen) {
-            // Importante: tu función se llama setFEN
+            // Limpiamos el FEN por si trae datos extra (turno, enroque, etc.)
+            // Tu función setFEN es robusta, así que le pasamos el string completo
             setFEN(data.fen);
-            statusEl.innerText = "✅ Posición cargada";
+            statusEl.innerText = "✅ ¡Posición cargada con éxito!";
+            statusEl.style.color = "var(--gold)";
         } else {
-            statusEl.innerText = "❌ No se reconoció el tablero";
+            statusEl.innerText = "❌ No se reconoció el tablero claramente";
         }
-    })
-    .catch(err => {
+    } catch (err) {
         console.error(err);
-        statusEl.innerText = "❌ Error de conexión";
-    });
+        statusEl.innerText = "❌ Error: La IA está saturada o la imagen no es clara";
+    }
 });
 
 // 2. EXTRA: Pegar con Ctrl+V (Súper útil para capturas de pantalla)
