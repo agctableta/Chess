@@ -1423,10 +1423,35 @@ async function procesarImagenAjedrez(file) {
 }
 
 // 1. Evento para el botón de archivo
+// Busca esta parte al final de tu <script> y reemplázala
 document.getElementById('imgInput').addEventListener('change', function(e) {
-    if (this.files && this.files[0]) {
-        procesarImagenAjedrez(this.files[0]);
-    }
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.querySelector('.status');
+    statusEl.innerText = "⏳ IA Analizando tablero...";
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    fetch('https://api.chessvision.ai/v1/predict', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.fen) {
+            // Importante: tu función se llama setFEN
+            setFEN(data.fen);
+            statusEl.innerText = "✅ Posición cargada";
+        } else {
+            statusEl.innerText = "❌ No se reconoció el tablero";
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        statusEl.innerText = "❌ Error de conexión";
+    });
 });
 
 // 2. EXTRA: Pegar con Ctrl+V (Súper útil para capturas de pantalla)
