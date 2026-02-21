@@ -491,14 +491,16 @@ window.addEventListener('load', _initSF);
     <div class="tab-panel hidden" id="tabAnal">
 		<div class="anal-controls">
 		  <button class="btn-analyze" id="btnAnalyze">Analizar</button>
-		  <button class="btn" onclick="document.getElementById('imgInput').click()">📸 Foto a FEN</button>
-		  <input type="file" id="imgInput" accept="image/*" style="display:none">
 		  
+		  <button class="btn-analyze" onclick="document.getElementById('imgInput').click()" style="background: var(--green); margin-top: 10px;">📸 Foto a FEN</button>
+		  <input type="file" id="imgInput" accept="image/*" style="display:none">
+		
 		  <div class="analysis-turn">
-			<div class="turn-btn active" id="turnW">B</div>
-			<div class="turn-btn" id="turnB">N</div>
+		    <div class="turn-btn active" id="turnW">B</div>
+		    <div class="turn-btn" id="turnB">N</div>
 		  </div>
 		</div>
+<div class="status" style="color: var(--gold); margin-top: 10px; font-family: 'Crimson Text';"></div>
       <div class="anal-results" id="analysisContent"></div>
     </div>
   </div>
@@ -669,33 +671,35 @@ document.getElementById('imgInput').addEventListener('change', function(e) {
     if (!file) return;
 
     const statusEl = document.querySelector('.status');
-    statusEl.innerText = "⏳ Procesando con IA...";
+    statusEl.innerText = "⏳ IA Analizando tablero...";
 
     const formData = new FormData();
-    formData.append('image', file); // Chessvision espera el campo 'image'
+    formData.append('image', file);
 
+    // Usamos el servidor de Chessvision
     fetch('https://api.chessvision.ai/v1/predict', {
         method: 'POST',
         body: formData
     })
     .then(res => {
-        if(!res.ok) throw new Error("Error en el servidor");
+        if(!res.ok) throw new Error("Error en servidor");
         return res.json();
     })
     .then(data => {
-        if (data.fen) {
-            // El FEN viene completo, lo limpiamos para tu tablero si es necesario
-            const fenSoloPiezas = data.fen.split(' ')[0];
-            setFEN(fenSoloPiezas);
+        if (data && data.fen) {
+            // Actualizamos el tablero y el input de texto
+            setFEN(data.fen);
+            if(document.querySelector('.fen-input')) {
+                document.querySelector('.fen-input').value = data.fen;
+            }
             statusEl.innerText = "✅ ¡Posición cargada!";
         } else {
-            statusEl.innerText = "❌ No se detectó tablero";
+            statusEl.innerText = "❌ No se reconoció el tablero";
         }
     })
     .catch(err => {
         console.error(err);
-        statusEl.innerText = "❌ Error de conexión (CORS)";
-        alert("Si ves este error en un servidor, contacta con soporte de la API.");
+        statusEl.innerText = "❌ Error de conexión con la IA";
     });
 });
 // ── BUILD DOM ─────────────────────────────────────────────────────────────────
