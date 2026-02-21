@@ -667,43 +667,39 @@ async function cargarDesdeImagen(file) {
 
 // Evento para el botón de subida (debes añadir el input en el HTML)
 // Escuchar cuando el usuario selecciona una imagen
-document.getElementById('imgInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+// Aseguramos que el código espere a que la página cargue
+window.addEventListener('load', () => {
+    const input = document.getElementById('imgInput');
+    if (input) {
+        input.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-    const statusEl = document.querySelector('.status');
-    statusEl.innerText = "⏳ IA Analizando tablero...";
+            const status = document.querySelector('.status');
+            status.innerText = "⏳ Analizando imagen...";
 
-    const formData = new FormData();
-    formData.append('image', file);
+            const formData = new FormData();
+            formData.append('image', file);
 
-    // Usamos el servidor de Chessvision
-    fetch('https://api.chessvision.ai/v1/predict', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => {
-        if(!res.ok) throw new Error("Error en servidor");
-        return res.json();
-    })
-    .then(data => {
-        if (data && data.fen) {
-            // Actualizamos el tablero y el input de texto
-            setFEN(data.fen);
-            if(document.querySelector('.fen-input')) {
-                document.querySelector('.fen-input').value = data.fen;
+            try {
+                const response = await fetch('https://api.chessvision.ai/v1/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.fen) {
+                    setFEN(data.fen);
+                    status.innerText = "✅ ¡Cargado!";
+                } else {
+                    status.innerText = "❌ No se reconoció el tablero";
+                }
+            } catch (err) {
+                status.innerText = "❌ Error de conexión con la IA";
             }
-            statusEl.innerText = "✅ ¡Posición cargada!";
-        } else {
-            statusEl.innerText = "❌ No se reconoció el tablero";
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        statusEl.innerText = "❌ Error de conexión con la IA";
-    });
-});
-// ── BUILD DOM ─────────────────────────────────────────────────────────────────
+        });
+    }
+});// ── BUILD DOM ─────────────────────────────────────────────────────────────────
 function buildDOM() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
